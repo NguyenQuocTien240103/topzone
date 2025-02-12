@@ -6,9 +6,20 @@ import { LocalAuthGuard } from "./guard/local-auth.guard";
 import { JwtAuthGuard } from "./guard/jwt-auth.guard";
 import { Response } from 'express';
 import { RolesGuard } from "./guard/roles.guard";
+import { GoogleAuthGuard } from './guard/google.auth.guard';
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
+    @UseGuards(GoogleAuthGuard)
+    @Get('google/login')
+    async googleLogin() {
+
+    }
+    @UseGuards(GoogleAuthGuard)
+    @Get('google/callback')
+    async googleCallback() {
+
+    }
     // @UsePipes(new ValidationPipe())
     @Post('register')
     register(@Body() authDto: AuthDto) {
@@ -36,5 +47,4 @@ export class AuthController {
         console.log(req.user);
         return 'success';
     }
-
 }
