@@ -1,3 +1,4 @@
+import { jwtConstants } from './constants';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from './../prisma/prisma.service';
 import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
@@ -28,8 +29,9 @@ export class AuthService {
     }
     async login(user: any) {
         const payload = { sub: user.id, email: user.email, role: user.role };
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '10s' });
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        const accessToken = this.generateAccessToken(payload);
+        const refreshToken = this.generateRefreshToken(payload);
+        await this.storeRefreshToken(user.id, refreshToken);
         return {
             accessToken,
             refreshToken,
@@ -65,4 +67,29 @@ export class AuthService {
             throw new InternalServerErrorException('Server Error');
         }
     }
+    generateAccessToken(payload: any) {
+        return this.jwtService.sign(payload, {
+            secret: jwtConstants.access_token_secret,
+            expiresIn: '60s'
+        })
+    }
+    generateRefreshToken(payload: any) {
+        return this.jwtService.sign(payload, {
+            secret: jwtConstants.refresh_token_secret,
+            expiresIn: '7d'
+        })
+    }
+    async storeRefreshToken(userId: number, token: string): Promise<void> {
+        try {
+            await this.prisma.refresh_Token_User.upsert({
+                where: { userId },
+                update: { refresh_token: token },
+                create: { userId, refresh_token: token },
+            });
+        } catch (error) {
+            console.error("Error storing refresh token:", error);
+            throw error;
+        }
+    }
+
 }

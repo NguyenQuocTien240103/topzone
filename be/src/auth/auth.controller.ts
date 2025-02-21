@@ -29,13 +29,9 @@ export class AuthController {
     @Post('login')
     async login(@Request() req, @Res() res: Response) {
         const result = await this.authService.login(req.user);
-        res.cookie('refreshToken', result.refreshToken, {
-            httpOnly: true, // Ngăn JavaScript truy cập cookie (bảo mật)
-            sameSite: 'strict', // Giảm nguy cơ tấn công CSRF
-            maxAge: 7 * 24 * 3600 * 1000, // Hạn sử dụng 7 ngày
-        });
         return res.json({
             accessToken: result.accessToken,
+            refreshToken: result.refreshToken
         });
     }
     @Roles(['admin'])
@@ -43,8 +39,6 @@ export class AuthController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Post('test')
     async test(@Request() req, @Res() res: Response) {
-        // console.log(req.cookies.refreshToken);
-        console.log(req.user);
         return 'success';
     }
 }

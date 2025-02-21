@@ -9,10 +9,7 @@ import { jwtConstants } from './constants';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
 @Module({
-    imports: [PassportModule, JwtModule.register({
-        secret: jwtConstants.secret,
-        // signOptions: { expiresIn: '60s' },
-    })],
+    imports: [PassportModule, JwtModule.register({})],
     controllers: [AuthController],
     providers: [AuthService, JwtStrategy, LocalStrategy, RolesGuard, GoogleStrategy],
 })

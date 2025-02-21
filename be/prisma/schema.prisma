@@ -16,4 +16,11 @@ model User {
   role      String
   firstName String?
   lastName  String?
+  refresh_token_user Refresh_Token_User?
+}
+
+model Refresh_Token_User{
+  userId  Int @unique
+  user  User @relation(fields: [userId], references:[id])
+  refresh_token String
 }

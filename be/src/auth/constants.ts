@@ -1,7 +1,8 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 export const jwtConstants = {
-    secret: process.env.SECRET,
+    access_token_secret: process.env.ACCESS_TOKEN_SECRET,
+    refresh_token_secret: process.env.REFRESH_TOKEN_SECRET,
 };
 export const oAuthConstants = {
     clientID: process.env.GOOGLE_CLIENT_ID,

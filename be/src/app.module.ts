@@ -4,9 +4,10 @@ import { UserModule } from './user/user.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/guard/roles.guard';
-import { JWTModule } from './JWT.module';
+// import { JWTModule } from './JWT.module';
 @Module({
-  imports: [AuthModule, UserModule, PrismaModule, JWTModule],
+  // imports: [AuthModule, UserModule, PrismaModule, JWTModule],
+  imports: [AuthModule, UserModule, PrismaModule],
   providers: [],
 })
 export class AppModule { }
