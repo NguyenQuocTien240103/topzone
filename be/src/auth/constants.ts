@@ -1,11 +1,22 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-export const jwtConstants = {
-    access_token_secret: process.env.ACCESS_TOKEN_SECRET,
-    refresh_token_secret: process.env.REFRESH_TOKEN_SECRET,
-};
-export const oAuthConstants = {
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_REDIRECT_URI,
+const getEnv = (key: string): string => {
+    const value = process.env[key];
+    if (!value) {
+        throw new Error(`Missing environment variable: ${key}`);
+    }
+    return value;
 }
+
+export const jwtConstants = {
+    accessTokenSecret: getEnv('ACCESS_TOKEN_SECRET'),
+    refreshTokenSecret: getEnv('REFRESH_TOKEN_SECRET'),
+};
+
+export const oAuthConstants = {
+    clientId: getEnv('GOOGLE_CLIENT_ID'),
+    clientSecret: getEnv('GOOGLE_CLIENT_SECRET'),
+    callbackUrl: getEnv('GOOGLE_REDIRECT_URI'),
+};
+
+export const sgMailConstants = {
+    apiKey: getEnv('SENDGRID_API_KEY'),
+};

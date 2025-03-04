@@ -1,16 +1,13 @@
-import { RolesGuard } from './guard/roles.guard';
-import { LocalStrategy } from './strategy/local.strategy';
 import { Module } from "@nestjs/common";
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
-import { jwtConstants } from './constants';
-import { JwtStrategy } from './strategy/jwt.strategy';
-import { GoogleStrategy } from './strategy/google.strategy';
+import { PassportModule } from "@nestjs/passport";
+import { RolesGuard } from './guard';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtRefreshTokenStrategy, GoogleStrategy, JwtStrategy, LocalStrategy } from './strategy';
 @Module({
-    imports: [PassportModule, JwtModule.register({})],
+    imports: [PassportModule.register({ defaultStrategy: 'refresh_token' }), JwtModule.register({})],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, LocalStrategy, RolesGuard, GoogleStrategy],
+    providers: [AuthService, JwtStrategy, LocalStrategy, RolesGuard, GoogleStrategy, JwtRefreshTokenStrategy],
 })
 export class AuthModule { }

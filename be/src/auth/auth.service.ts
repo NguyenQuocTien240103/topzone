@@ -1,13 +1,15 @@
-import { jwtConstants } from './constants';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from './../prisma/prisma.service';
 import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
-import { AuthDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-
+import * as SendGrid from '@sendgrid/mail';
+import * as bcrypt from 'bcrypt';
+import { AuthDto } from './dto';
+import { jwtConstants, sgMailConstants } from './constants';
+import { PrismaService } from './../prisma/prisma.service';
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService, private jwtService: JwtService) { }
+    constructor(private prisma: PrismaService, private jwtService: JwtService) {
+        SendGrid.setApiKey(sgMailConstants.apiKey);
+    }
     async validateUser(email: string, pass: string): Promise<any> {
         try {
             const user = await this.prisma.user.findUnique({
@@ -16,8 +18,7 @@ export class AuthService {
             if (!user) {
                 return null;
             }
-            // compare password
-            const isMatchPassword = await bcrypt.compare(pass, user.password);
+            const isMatchPassword = await this.verifyHash(pass, user.password);
             if (!isMatchPassword) {
                 return null;
             }
@@ -47,8 +48,7 @@ export class AuthService {
             if (userExist) {
                 throw new ConflictException('User already exists');
             }
-            const saltOrRounds = 10;
-            const hash = await bcrypt.hash(authDto.password, saltOrRounds);
+            const hash = await this.generateHash(authDto.password)
             const user = await this.prisma.user.create({
                 data: {
                     email: authDto.email,
@@ -67,29 +67,68 @@ export class AuthService {
             throw new InternalServerErrorException('Server Error');
         }
     }
-    generateAccessToken(payload: any) {
+    async send(mail: SendGrid.MailDataRequired) {
+        const transport = await SendGrid.send(mail);
+        // avoid this on production. use log instead :)
+        console.log(`E-Mail sent to ${mail.to}`);
+        return transport;
+    }
+    generateAccessToken(payload: any): string {
         return this.jwtService.sign(payload, {
-            secret: jwtConstants.access_token_secret,
-            expiresIn: '60s'
+            secret: jwtConstants.accessTokenSecret,
+            expiresIn: '3600s'
         })
     }
-    generateRefreshToken(payload: any) {
+    generateRefreshToken(payload: any): string {
         return this.jwtService.sign(payload, {
-            secret: jwtConstants.refresh_token_secret,
+            secret: jwtConstants.refreshTokenSecret,
             expiresIn: '7d'
         })
     }
+    async generateHash(currentData: string): Promise<string> {
+        const saltOrRounds = 10;
+        const hash = await bcrypt.hash(currentData, saltOrRounds);
+        return hash;
+    }
+    async verifyHash(currentData: string, hashData: string): Promise<boolean> {
+        const isMatch = await bcrypt.compare(currentData, hashData);
+        return isMatch;
+    }
     async storeRefreshToken(userId: number, token: string): Promise<void> {
         try {
+            const hashedToken = await this.generateHash(token);
             await this.prisma.refresh_Token_User.upsert({
                 where: { userId },
-                update: { refresh_token: token },
-                create: { userId, refresh_token: token },
+                update: { refresh_token: hashedToken },
+                create: { userId, refresh_token: hashedToken },
             });
         } catch (error) {
             console.error("Error storing refresh token:", error);
             throw error;
         }
     }
-
+    async getUserIfRefreshTokenMatched(userId: number, refreshToken: string) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    id: userId,
+                },
+                include: {
+                    refresh_token_user: true
+                },
+            });
+            if (!user) {
+                return null;
+            }
+            const isMatch = await this.verifyHash(refreshToken, user.refresh_token_user.refresh_token);
+            if (!isMatch) {
+                throw new Error("Internal Server Error");
+            }
+            delete user.refresh_token_user;
+            delete user.password;
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
 }

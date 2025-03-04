@@ -1,12 +1,9 @@
+import { Controller, Get, Post, Body, UseGuards, Request, Res } from "@nestjs/common";
+import { Response } from 'express';
 import { Roles } from './decorator/roles.decorator';
-import { Controller, Get, ParseIntPipe, Post, Param, ValidationPipe, Body, UseGuards, Request, UsePipes, Res } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthDto } from "./dto";
-import { LocalAuthGuard } from "./guard/local-auth.guard";
-import { JwtAuthGuard } from "./guard/jwt-auth.guard";
-import { Response } from 'express';
-import { RolesGuard } from "./guard/roles.guard";
-import { GoogleAuthGuard } from './guard/google.auth.guard';
+import { GoogleAuthGuard, RolesGuard, JwtAuthGuard, LocalAuthGuard, JwtRefreshTokenGuard } from './guard'
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
@@ -35,10 +32,31 @@ export class AuthController {
         });
     }
     @Roles(['admin'])
-    // @UseGuards(RolesGuard)   
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Post('test')
     async test(@Request() req, @Res() res: Response) {
-        return 'success';
+        return res.json({
+            message: 'success'
+        })
+    }
+    @Roles(['admin'])
+    @UseGuards(JwtRefreshTokenGuard, RolesGuard)
+    @Post('refresh')
+    async renewhAccessToken(@Request() req, @Res() res: Response) {
+        const accessToken = this.authService.generateAccessToken(req.user);
+        return res.json({
+            accessToken,
+        })
+    }
+    @Post('send-email')
+    async sendEmail() {
+        const mail = {
+            to: 'nguyenquoctien2401@gmail.com',
+            subject: 'Hello from sendgrid',
+            from: 'nguyenquoctien2401@gmail.com',
+            text: 'Hello',
+            html: '<h1>Hello</h1>',
+        };
+        return await this.authService.send(mail);
     }
 }

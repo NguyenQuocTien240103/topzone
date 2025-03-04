@@ -8,9 +8,9 @@ import { oAuthConstants } from '../constants';
 export class GoogleStrategy extends PassportStrategy(Strategy) {
     constructor() {
         super({
-            clientID: oAuthConstants.clientID,
+            clientID: oAuthConstants.clientId,
             clientSecret: oAuthConstants.clientSecret,
-            callbackURL: oAuthConstants.callbackURL,
+            callbackURL: oAuthConstants.callbackUrl,
             scope: ['profile', 'email'],
         });
 
